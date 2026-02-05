@@ -1,0 +1,40 @@
+name: Stock Data Scraper
+
+on:
+  # Run every 30 minutes during market hours (WIB = UTC+7)
+  # Market hours: 09:00-16:00 WIB = 02:00-09:00 UTC
+  schedule:
+    - cron: '0,30 2-9 * * 1-5'  # Every 30 mins, Mon-Fri, during market hours
+  
+  # Manual trigger
+  workflow_dispatch:
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          cd scraper
+          pip install -r requirements.txt
+      
+      - name: Run scraper
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: |
+          cd scraper
+          python scrape_stocks.py
+      
+      - name: Log completion
+        run: |
+          echo "✅ Scraper completed at $(date)"
