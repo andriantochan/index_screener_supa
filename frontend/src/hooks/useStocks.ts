@@ -110,10 +110,24 @@ export function useStocks(): UseStocksReturn {
     };
   }, []);
 
-  const screenedStocks = stocks.filter((s) => s.passed_screen);
+  // Sort by recommendation: score + accumulation bonus + foreign flow bonus
+  const sortByRecommendation = (a: Stock, b: Stock) => {
+    const getRecommendationScore = (s: Stock) => {
+      let recScore = s.score;
+      if (s.acc_dist_status === 'accumulation') recScore += 50;
+      if (s.net_foreign > 0) recScore += 30;
+      if (s.change_percent > 0) recScore += 20;
+      return recScore;
+    };
+    return getRecommendationScore(b) - getRecommendationScore(a);
+  };
+
+  const screenedStocks = stocks
+    .filter((s) => s.passed_screen)
+    .sort(sortByRecommendation);
 
   return {
-    stocks,
+    stocks: [...stocks].sort(sortByRecommendation),
     screenedStocks,
     marketStatus,
     loading,

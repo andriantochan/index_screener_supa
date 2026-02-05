@@ -332,8 +332,10 @@ def calculate_screening_score(stock):
     price = stock.get("price", 0)
     volume = stock.get("volume", 0)
     volatility = stock.get("volatility", 0)
-    change_percent = abs(stock.get("change_percent", 0))
+    change_percent = stock.get("change_percent", 0)  # Keep sign for direction
     spread = stock.get("spread", 0)
+    net_foreign = stock.get("net_foreign", 0)
+    acc_dist_status = stock.get("acc_dist_status", "neutral")
     
     # Price range: Rp 100 - Rp 10,000
     if 100 <= price <= 10000:
@@ -357,12 +359,25 @@ def calculate_screening_score(stock):
     else:
         passed = False
     
-    # Price change > 0.5%
-    if change_percent >= 0.5:
+    # Price change > 0.5% (bonus for positive direction)
+    if abs(change_percent) >= 0.5:
         score += 15
+        if change_percent > 0:
+            score += 10  # Bonus for uptrend
     
     # Spread < 2%
     if 0 < spread < 2:
+        score += 20
+    
+    # === NEW: Buy Recommendation Bonus ===
+    # Foreign flow positive (asing beli)
+    if net_foreign > 0:
+        score += 15
+        if net_foreign > 1000000:  # Net foreign > 1M lot
+            score += 10
+    
+    # Accumulation status
+    if acc_dist_status == "accumulation":
         score += 20
     elif spread >= 2:
         score -= 10

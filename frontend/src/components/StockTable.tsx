@@ -84,7 +84,7 @@ export function StockTable({ stocks, loading }: Props) {
             <th className="text-right px-4 py-3 text-sm font-medium text-gray-400 hidden md:table-cell">Volume</th>
             <th className="text-right px-4 py-3 text-sm font-medium text-gray-400 hidden lg:table-cell">Net Foreign</th>
             <th className="text-center px-4 py-3 text-sm font-medium text-gray-400 hidden lg:table-cell">Acc/Dist</th>
-            <th className="text-right px-4 py-3 text-sm font-medium text-gray-400">Score</th>
+            <th className="text-right px-4 py-3 text-sm font-medium text-gray-400">Rekomendasi</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-700">
@@ -118,13 +118,21 @@ export function StockTable({ stocks, loading }: Props) {
                   {getAccDistBadge(stock.acc_dist_status)}
                 </td>
                 <td className="px-4 py-3 text-right">
-                  <span className={`px-2 py-1 rounded font-medium ${
-                    stock.score >= 60 ? 'bg-green-600/30 text-green-400' :
-                    stock.score >= 40 ? 'bg-yellow-600/30 text-yellow-400' :
-                    'bg-gray-600/30 text-gray-400'
-                  }`}>
-                    {stock.score}
-                  </span>
+                  <div className="flex flex-col items-end gap-1">
+                    <span className={`px-2 py-1 rounded font-medium ${
+                      stock.score >= 100 ? 'bg-green-600/50 text-green-300' :
+                      stock.score >= 80 ? 'bg-green-600/30 text-green-400' :
+                      stock.score >= 60 ? 'bg-yellow-600/30 text-yellow-400' :
+                      'bg-gray-600/30 text-gray-400'
+                    }`}>
+                      {stock.score}
+                    </span>
+                    {stock.score >= 100 && stock.acc_dist_status === 'accumulation' && stock.net_foreign > 0 && (
+                      <span className="text-xs px-1.5 py-0.5 bg-green-500 text-white rounded font-bold animate-pulse">
+                        BUY
+                      </span>
+                    )}
+                  </div>
                 </td>
               </tr>
               
