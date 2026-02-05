@@ -324,34 +324,59 @@ def calculate_accumulation_distribution(idx_data, yahoo_data):
         return "neutral", score
 
 
+def calculate_rsi(change_percent, volatility):
+    """
+    Estimate RSI based on price change and volatility.
+    True RSI needs 14 periods, this is a simplified daily estimate.
+    RSI = 50 + (change_percent / volatility * 25) clamped to 0-100
+    """
+    if volatility <= 0:
+        return 50  # Neutral if no volatility
+    
+    # Normalize change relative to volatility
+    normalized = (change_percent / volatility) * 25
+    rsi = 50 + normalized
+    
+    # Clamp to 0-100
+    return max(0, min(100, rsi))
+
+
 def calculate_screening_score(stock):
-    """Calculate screening score for scalping criteria"""
+    """
+    Calculate screening score based on scalping criteria:
+    - Volume > 1 juta (20%)
+    - Volatilitas > 2% (20%)
+    - Harga Rp 100-10.000 (15%)
+    - RSI 30-70 (15%)
+    - Price Change > 0.5% (15%)
+    - Spread < 2% (15%)
+    """
     score = 0
     passed = True
     
     price = stock.get("price", 0)
     volume = stock.get("volume", 0)
     volatility = stock.get("volatility", 0)
-    change_percent = stock.get("change_percent", 0)  # Keep sign for direction
+    change_percent = stock.get("change_percent", 0)
     spread = stock.get("spread", 0)
     net_foreign = stock.get("net_foreign", 0)
     acc_dist_status = stock.get("acc_dist_status", "neutral")
     
-    # Price range: Rp 100 - Rp 10,000
-    if 100 <= price <= 10000:
-        score += 20
-    else:
-        passed = False
+    # Calculate RSI estimate
+    rsi = calculate_rsi(change_percent, volatility)
+    stock["rsi"] = round(rsi, 2)  # Update stock's RSI value
     
-    # Volume > 1 million
+    # === SCREENING CRITERIA (Total base: 100 points) ===
+    
+    # 1. Volume > 1 juta lembar/hari (20 points)
     if volume >= 1000000:
-        score += 25
+        score += 20
     elif volume >= 500000:
         score += 10
     else:
         passed = False
     
-    # Volatility > 2%
+    # 2. Volatilitas > 2% (20 points)
     if volatility >= 2:
         score += 20
     elif volatility >= 1:
@@ -359,28 +384,42 @@ def calculate_screening_score(stock):
     else:
         passed = False
     
-    # Price change > 0.5% (bonus for positive direction)
+    # 3. Harga Rp 100 - Rp 10.000 (15 points)
+    if 100 <= price <= 10000:
+        score += 15
+    else:
+        passed = False
+    
+    # 4. RSI 30-70 - avoid extreme overbought/oversold (15 points)
+    if 30 <= rsi <= 70:
+        score += 15
+    elif 20 <= rsi <= 80:
+        score += 8  # Partial score for near-range
+    # RSI extreme (<20 or >80) might indicate reversal risk
+    
+    # 5. Price Change > 0.5% (15 points)
     if abs(change_percent) >= 0.5:
         score += 15
         if change_percent > 0:
-            score += 10  # Bonus for uptrend
+            score += 5  # Small bonus for uptrend
     
-    # Spread < 2%
+    # 6. Spread < 2% (15 points)
     if 0 < spread < 2:
-        score += 20
+        score += 15
+    elif spread >= 2:
+        score -= 5  # Penalty for wide spread
     
-    # === NEW: Buy Recommendation Bonus ===
+    # === BUY RECOMMENDATION BONUS (Extra points) ===
+    
     # Foreign flow positive (asing beli)
     if net_foreign > 0:
         score += 15
-        if net_foreign > 1000000:  # Net foreign > 1M lot
+        if net_foreign > 1000000:
             score += 10
     
     # Accumulation status
     if acc_dist_status == "accumulation":
         score += 20
-    elif spread >= 2:
-        score -= 10
     
     return score, passed
 

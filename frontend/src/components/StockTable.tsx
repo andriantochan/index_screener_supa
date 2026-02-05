@@ -186,6 +186,17 @@ export function StockTable({ stocks, loading }: Props) {
                         <div className="text-yellow-400 font-mono">{stock.volatility.toFixed(2)}%</div>
                       </div>
                       <div>
+                        <div className="text-gray-400">RSI (14)</div>
+                        <div className={`font-mono ${
+                          stock.rsi < 30 ? 'text-green-400' : 
+                          stock.rsi > 70 ? 'text-red-400' : 'text-white'
+                        }`}>
+                          {stock.rsi.toFixed(1)}
+                          {stock.rsi < 30 && ' (Oversold)'}
+                          {stock.rsi > 70 && ' (Overbought)'}
+                        </div>
+                      </div>
+                      <div>
                         <div className="text-gray-400">Spread</div>
                         <div className="text-white font-mono">{stock.spread.toFixed(2)}%</div>
                       </div>
