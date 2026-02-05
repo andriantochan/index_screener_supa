@@ -2,9 +2,6 @@
 -- BEI Stock Screener - Supabase Schema
 -- =============================================
 
--- Enable realtime
-alter publication supabase_realtime add table stocks;
-
 -- Stocks table
 CREATE TABLE IF NOT EXISTS stocks (
     symbol VARCHAR(10) PRIMARY KEY,
@@ -131,3 +128,7 @@ CREATE POLICY "Service can update stocks" ON stocks
 
 CREATE POLICY "Service can update market_status" ON market_status
     FOR ALL USING (true);
+
+-- Enable realtime (run this AFTER tables are created)
+ALTER PUBLICATION supabase_realtime ADD TABLE stocks;
+ALTER PUBLICATION supabase_realtime ADD TABLE market_status;
